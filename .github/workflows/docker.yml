@@ -71,13 +71,18 @@ jobs:
           test "$(curl -s -o /dev/null -w '%{http_code}' -X POST http://127.0.0.1:8551/mcp)" = 401
           # Authenticated initialize must reach the MCP server through nginx and the auth tier.
           body='{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"smoke","version":"0"}}}'
-          curl -fsS -X POST http://127.0.0.1:8551/mcp \
+          code=$(curl -sS -o init.txt -w '%{http_code}' -X POST http://127.0.0.1:8551/mcp \
             -H "Authorization: Bearer $token" -H 'Content-Type: application/json' \
-            -H 'Accept: application/json, text/event-stream' -d "$body" > init.txt
-          cat init.txt
+            -H 'Accept: application/json, text/event-stream' -d "$body")
+          echo "initialize HTTP $code"
+          cat init.txt; echo
+          test "$code" = 200
           grep -qi 'seerr' init.txt
           docker exec smoke test -f /config/password-hash
-          docker logs smoke 2>&1 | tail -20
+
+      - name: Container logs on failure
+        if: failure()
+        run: docker logs smoke 2>&1 | tail -80
 
       - name: Stop smoke container
         if: always()
