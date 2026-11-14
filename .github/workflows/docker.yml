@@ -47,6 +47,42 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build for smoke test
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          load: true
+          tags: seerr-mcp:smoke
+          cache-from: type=gha
+
+      - name: Smoke test
+        run: |
+          set -euo pipefail
+          cfg=$(mktemp -d)
+          token=$(openssl rand -hex 24)
+          printf '%s' "$token" > "$cfg/token"
+          docker run -d --name smoke -p 127.0.0.1:8551:8551 \
+            -e SEERR_URL=http://127.0.0.1:5055 -e SEERR_API_KEY=unused \
+            -e ISSUER=https://smoke.example.com -e APP_PASSWORD=smoke-pass \
+            -v "$cfg:/config" seerr-mcp:smoke
+          for i in $(seq 1 30); do curl -fsS http://127.0.0.1:8551/healthz && break; sleep 1; done
+          test "$(curl -fsS http://127.0.0.1:8551/healthz)" = ok
+          # Unauthenticated MCP calls must be refused by the OAuth front.
+          test "$(curl -s -o /dev/null -w '%{http_code}' -X POST http://127.0.0.1:8551/mcp)" = 401
+          # Authenticated initialize must reach the MCP server through nginx and the auth tier.
+          body='{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"smoke","version":"0"}}}'
+          curl -fsS -X POST http://127.0.0.1:8551/mcp \
+            -H "Authorization: Bearer $token" -H 'Content-Type: application/json' \
+            -H 'Accept: application/json, text/event-stream' -d "$body" > init.txt
+          cat init.txt
+          grep -qi 'seerr' init.txt
+          docker exec smoke test -f /config/password-hash
+          docker logs smoke 2>&1 | tail -20
+
+      - name: Stop smoke container
+        if: always()
+        run: docker rm -f smoke || true
+
       - id: meta
         uses: docker/metadata-action@v5
         with:
