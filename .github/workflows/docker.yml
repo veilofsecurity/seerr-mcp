@@ -71,9 +71,15 @@ jobs:
           test "$(curl -s -o /dev/null -w '%{http_code}' -X POST http://127.0.0.1:8551/mcp)" = 401
           # Authenticated initialize must reach the MCP server through nginx and the auth tier.
           body='{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"smoke","version":"0"}}}'
-          code=$(curl -sS -o init.txt -w '%{http_code}' -X POST http://127.0.0.1:8551/mcp \
-            -H "Authorization: Bearer $token" -H 'Content-Type: application/json' \
-            -H 'Accept: application/json, text/event-stream' -d "$body")
+          # The auth tier answers before the Python server is listening, so retry until it is up.
+          code=000
+          for i in $(seq 1 60); do
+            code=$(curl -sS -o init.txt -w '%{http_code}' -X POST http://127.0.0.1:8551/mcp \
+              -H "Authorization: Bearer $token" -H 'Content-Type: application/json' \
+              -H 'Accept: application/json, text/event-stream' -d "$body" || echo 000)
+            [ "$code" = 200 ] && break
+            sleep 1
+          done
           echo "initialize HTTP $code"
           cat init.txt; echo
           test "$code" = 200
