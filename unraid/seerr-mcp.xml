@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+<Container version="2">
+  <Name>seerr-mcp</Name>
+  <Repository>ghcr.io/veilofsecurity/seerr-mcp:latest</Repository>
+  <Registry>https://ghcr.io/veilofsecurity/seerr-mcp</Registry>
+  <Network>bridge</Network>
+  <Shell>bash</Shell>
+  <Privileged>false</Privileged>
+  <Support>https://github.com/veilofsecurity/seerr-mcp/issues</Support>
+  <Project>https://github.com/veilofsecurity/seerr-mcp</Project>
+  <Overview>MCP server for Overseerr and Jellyseerr, exposing all 170 API operations to Claude.ai custom connectors and Claude Code. Sign-in is handled by a built-in OAuth 2.1 front. Put a reverse proxy or Cloudflare Tunnel in front of port 8551 and set ISSUER to that public https URL.</Overview>
+  <Category>Downloaders: Other:</Category>
+  <WebUI></WebUI>
+  <TemplateURL></TemplateURL>
+  <Icon>https://raw.githubusercontent.com/veilofsecurity/seerr-mcp/master/public/icon.png</Icon>
+  <ExtraParams></ExtraParams>
+  <PostArgs></PostArgs>
+  <CPUset></CPUset>
+  <DateInstalled></DateInstalled>
+  <Requires>Requires a running Overseerr or Jellyseerr instance and its API key.</Requires>
+
+  <Config Name="Seerr URL" Target="SEERR_URL" Default="http://192.168.1.10:5055" Mode="" Description="URL of your Overseerr or Jellyseerr instance, reachable from this container." Type="Variable" Display="always" Required="true" Mask="false">http://192.168.1.10:5055</Config>
+  <Config Name="Seerr API key" Target="SEERR_API_KEY" Default="" Mode="" Description="From Overseerr/Jellyseerr: Settings, General, API Key." Type="Variable" Display="always" Required="true" Mask="true"></Config>
+  <Config Name="Public URL (ISSUER)" Target="ISSUER" Default="" Mode="" Description="The public https URL this server is reached at, for example https://seerr-mcp.example.com. Required." Type="Variable" Display="always" Required="true" Mask="false"></Config>
+  <Config Name="Sign-in password" Target="APP_PASSWORD" Default="" Mode="" Description="Set on first start only, stored as a hash in /config. Leave empty after the first run." Type="Variable" Display="always" Required="false" Mask="true"></Config>
+  <Config Name="Web port" Target="8551" Default="8551" Mode="tcp" Description="Port the front door listens on. Point your reverse proxy or tunnel here." Type="Port" Display="always" Required="true" Mask="false">8551</Config>
+  <Config Name="Config" Target="/config" Default="/mnt/user/appdata/seerr-mcp" Mode="rw" Description="OAuth database, password hash and optional static token." Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/seerr-mcp</Config>
+</Container>
