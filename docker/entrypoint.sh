@@ -32,7 +32,8 @@ shutdown() {
 }
 trap shutdown TERM INT
 
-seerr-mcp --transport streamable-http --host 127.0.0.1 --port "$MCP_PORT" &
+# CLI choices are stdio|http; http is the streamable-http transport.
+seerr-mcp --transport http --host 127.0.0.1 --port "$MCP_PORT" &
 pids+=($!)
 
 node /app/auth-server.js &
