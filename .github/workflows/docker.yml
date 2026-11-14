@@ -23,7 +23,8 @@ jobs:
         with:
           python-version: "3.13"
       - name: Install
-        run: pip install -e ".[dev]"
+        # "dev" is a PEP 735 dependency group, not an extra, so name the tools.
+        run: pip install -e . ruff pytest pyyaml
       - name: Lint
         run: ruff check .
       - name: Test
